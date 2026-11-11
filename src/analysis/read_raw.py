@@ -11,7 +11,8 @@ import duckdb
 # Источник UCI опубликован в cp1252: в строке заголовка стоит байт 0xB0 (знак
 # градуса) в именах температурных полей. Данные при этом содержат только ASCII.
 # Поэтому для CSV заголовок пропускается, а имена столбцов задаются явно:
-# так файл читается и старым DuckDB, у которого ещё нет параметра encoding.
+# так read_csv_auto читает файл и на закреплённом DuckDB 1.1.3, у которого ещё
+# нет параметра encoding, и на более новых версиях.
 CSV_HEADER_SKIP = 1
 CSV_COLUMN_NAMES = (
     "Date",
@@ -35,7 +36,7 @@ def reader_for(filename: str) -> str:
     """Выбрать DuckDB table function по расширению исходного файла."""
     suffix = Path(filename).suffix.lower()
     readers = {
-        ".csv": "read_csv",
+        ".csv": "read_csv_auto",
         ".json": "read_json_auto",
         ".jsonl": "read_json_auto",
         ".ndjson": "read_json_auto",
@@ -55,7 +56,7 @@ def query_for(object_path: str, limit: int = 5) -> tuple[str, list[object]]:
     cp1252 не мешает чтению, а объект в raw читается без изменений.
     """
     reader = reader_for(object_path)
-    if reader == "read_csv":
+    if reader == "read_csv_auto":
         names = ", ".join(f"'{name}'" for name in CSV_COLUMN_NAMES)
         sql = (
             f"SELECT * FROM {reader}(?, skip={CSV_HEADER_SKIP}, header=false, "
